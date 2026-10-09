@@ -1,16 +1,14 @@
 """
 Module: afk_actions.py
 Implements the anti-AFK activity routine:
-- Opens a temporary .txt file in Notepad.
+- Opens a terminal window (cmd.exe) without creating any temporary files on disk.
 - Simulates natural keystrokes.
 - Simulates smooth mouse movement.
-- Closes Notepad and reliably removes the temporary file.
+- Closes the terminal cleanly.
 """
 
-import os
 import time
 import random
-import tempfile
 import subprocess
 import datetime
 import threading
@@ -24,11 +22,10 @@ pyautogui.PAUSE = 0.05
 def perform_anti_afk_routine(stop_event: threading.Event = None, log_callback=None) -> bool:
     """
     Executes the anti-AFK activity sequence:
-    1. Creates a temporary .txt file
-    2. Opens Notepad with the file
-    3. Types realistic activity text
-    4. Performs slight mouse movement
-    5. Always closes Notepad and deletes the temporary file in a finally block.
+    1. Opens a standalone terminal (cmd.exe) with zero temporary disk files.
+    2. Types realistic activity commands/text.
+    3. Performs slight mouse movement.
+    4. Exits and always ensures the terminal process is cleanly closed in a finally block.
 
     Returns True if completed successfully, False if aborted by stop_event or error.
     """
@@ -42,19 +39,17 @@ def perform_anti_afk_routine(stop_event: threading.Event = None, log_callback=No
         log("Action aborted before starting (stop event set).")
         return False
 
-    temp_dir = tempfile.gettempdir()
-    temp_file_path = os.path.join(temp_dir, f"teams_anti_afk_{int(time.time())}_{random.randint(1000, 9999)}.txt")
     proc = None
     success = False
 
     try:
-        # Create empty temp text file
-        with open(temp_file_path, "w", encoding="utf-8") as f:
-            f.write("")
-
-        log(f"Opening Notepad with temporary file: {temp_file_path}")
-        proc = subprocess.Popen(["notepad.exe", temp_file_path])
-        time.sleep(1.2)  # Allow Notepad window to open and receive focus
+        log("Opening terminal window (cmd.exe)...")
+        # Launch standalone console window without creating any temporary file on disk
+        proc = subprocess.Popen(
+            ["cmd.exe"],
+            creationflags=subprocess.CREATE_NEW_CONSOLE
+        )
+        time.sleep(1.2)  # Allow terminal window to open and receive focus
 
         if stop_event and stop_event.is_set():
             log("Stop event detected during startup.")
@@ -63,13 +58,13 @@ def perform_anti_afk_routine(stop_event: threading.Event = None, log_callback=No
         # 1. Keystroke simulation
         timestamp_str = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
         phrases = [
-            f"Teams Anti-AFK activity heartbeat at {timestamp_str}\n",
-            "Refreshing Teams status...\n",
-            "Keeping active session...\n",
+            f"echo [Teams Anti-AFK] Heartbeat at {timestamp_str}\n",
+            "echo Refreshing active session status...\n",
+            "echo Teams Anti-AFK session active\n",
         ]
         chosen_phrase = random.choice(phrases)
 
-        log("Simulating keystrokes...")
+        log("Simulating keystrokes in terminal...")
         for char in chosen_phrase:
             if stop_event and stop_event.is_set():
                 log("Stop event detected during typing.")
@@ -101,6 +96,16 @@ def perform_anti_afk_routine(stop_event: threading.Event = None, log_callback=No
             time.sleep(0.1)
 
         time.sleep(0.5)
+
+        # 3. Exit terminal command
+        if stop_event and stop_event.is_set():
+            log("Stop event detected before exit.")
+            return False
+
+        log("Sending exit command to terminal...")
+        pyautogui.write("exit\n")
+        time.sleep(0.5)
+
         success = True
         return True
 
@@ -109,25 +114,24 @@ def perform_anti_afk_routine(stop_event: threading.Event = None, log_callback=No
         return False
 
     finally:
-        # ALWAYS guarantee that Notepad is closed and temporary file is deleted
-        log("Cleaning up: closing Notepad and removing temporary file...")
-        _cleanup_notepad_and_file(proc, temp_file_path, log)
+        # ALWAYS guarantee that the terminal process tree is cleanly terminated
+        log("Cleaning up: ensuring terminal process is terminated...")
+        _cleanup_terminal_process(proc, log)
         if success:
-            log("Anti-AFK routine completed and cleaned up successfully.")
+            log("Anti-AFK routine completed and closed successfully.")
 
 
-def _cleanup_notepad_and_file(proc: subprocess.Popen, file_path: str, log_func=None):
+def _cleanup_terminal_process(proc: subprocess.Popen, log_func=None):
     """
-    Forcefully and cleanly terminates Notepad process tree and removes the temp file with retries.
+    Forcefully and cleanly terminates the terminal process tree.
     """
     def log(m):
         if log_func:
             log_func(m)
 
-    # 1. Close Notepad process tree
     if proc:
         try:
-            # Use taskkill /F /T to terminate the process and all child threads/windows
+            # Terminate the process tree (including any child threads/consoles)
             subprocess.run(
                 ["taskkill", "/F", "/T", "/PID", str(proc.pid)],
                 stdout=subprocess.DEVNULL,
@@ -144,27 +148,8 @@ def _cleanup_notepad_and_file(proc: subprocess.Popen, file_path: str, log_func=N
         except Exception:
             pass
 
-    # Give Windows filesystem a moment to release file handles
-    time.sleep(0.3)
-
-    # 2. Reliably delete the temporary file with retry loop
-    if file_path and os.path.exists(file_path):
-        deleted = False
-        for attempt in range(10):
-            try:
-                os.remove(file_path)
-                deleted = True
-                break
-            except Exception as ex:
-                time.sleep(0.25)
-
-        if deleted:
-            log(f"Temporary file successfully deleted: {file_path}")
-        else:
-            log(f"Warning: Could not delete temporary file {file_path} after retries.")
-
 
 if __name__ == "__main__":
-    print("Testing anti-AFK routine with guaranteed cleanup...")
+    print("Testing anti-AFK routine with terminal (zero temp files)...")
     result = perform_anti_afk_routine()
     print("Routine result:", result)

@@ -1,26 +1,26 @@
 # Teams Anti-AFK Tray App
 
-A lightweight, background Windows System Tray utility written in Python that automatically keeps your Microsoft Teams status **Available** by detecting periods of user inactivity, simulating realistic activity (opening a temporary text file in Notepad, typing keystrokes, gentle mouse movement, and closing), and providing an instant global stop/resume hotkey.
+A lightweight, background Windows System Tray utility written in Python that automatically keeps your Microsoft Teams status **Available** by detecting periods of user inactivity, simulating realistic activity (opening a terminal window, typing keystrokes, gentle mouse movement, and closing), and providing an instant global stop/resume hotkey.
 
 ---
 
 ## Features
 
 - **System Tray Integration**: Unobtrusive tray icon indicating live status:
-  - 🟢 **Green**: Active & monitoring idle time.
-  - 🔴 **Red**: Paused / Stopped.
-  - 🟡 **Amber**: Currently executing Anti-AFK routine.
+  - **Green**: Active and monitoring idle time.
+  - **Red**: Paused / Stopped.
+  - **Amber**: Currently executing Anti-AFK routine.
 - **Windows Idle Detection**: Uses native Win32 `GetLastInputInfo` to monitor true hardware/system idle time with near-zero CPU and memory footprint.
 - **4-Minute Default Threshold**: Automatically triggers when you are away for 4 minutes (configurable via tray menu to 1m, 2m, 4m, 5m, 10m).
 - **Realistic Action Routine**:
-  1. Opens a temporary `.txt` document in `Notepad.exe`.
+  1. Opens a standalone terminal window (`cmd.exe`) with zero files written to disk or temp storage.
   2. Types human-like keystrokes.
   3. Moves the mouse smoothly within a subtle bounding area.
-  4. Gracefully closes Notepad without leaving unsaved files or prompts.
+  4. Gracefully exits and closes the terminal.
 - **Instant Global Hotkey**:
   - `Win + Ctrl + Shift + F`: Instantly stops / pauses (or resumes) the anti-AFK service from anywhere in Windows.
-- **Safe Interruption**: If the stop hotkey is pressed while a routine is in progress, it immediately halts typing and cleanly closes the temporary window.
-- **Silent Background Run**: Option to run completely in the background without keeping a command prompt open.
+- **Safe Interruption**: If the stop hotkey is pressed while a routine is in progress, it immediately halts typing and cleanly closes the terminal window.
+- **Silent Background Run**: Option to run completely in the background without keeping a persistent command prompt open.
 
 ---
 
@@ -101,7 +101,7 @@ teamsAntiAfk/
 │   └── icon.ico         # Application icon
 ├── dist/
 │   └── TeamsAntiAfk.exe # Standalone executable (gitignored)
-├── afk_actions.py       # Handles opening Notepad, typing, mouse movement, and cleanup
+├── afk_actions.py       # Handles opening terminal, typing, mouse movement, and cleanup
 ├── build.bat            # 1-Click PyInstaller build script
 ├── hotkey_manager.py    # Global hotkey listener for Win + Ctrl + Shift + F
 ├── idle_tracker.py      # Win32 API idle duration measurement

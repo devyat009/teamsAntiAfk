@@ -83,8 +83,8 @@ class TestAfkActions(unittest.TestCase):
         result = afk_actions.perform_anti_afk_routine(stop_event=stop_event)
         self.assertFalse(result)
 
-    def test_full_routine_cleans_up_file(self):
-        # Run routine with short dummy typing and verify all temp files removed
+    def test_full_routine_terminal_execution(self):
+        # Run routine using terminal and verify successful completion without temp files
         result = afk_actions.perform_anti_afk_routine()
         self.assertTrue(result)
 
